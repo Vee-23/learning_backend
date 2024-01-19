@@ -19,7 +19,12 @@ import router from './routes/user.routes.js';
 
 //routes declaration
 app.use("/api/v1/users", router)
-
+app.post("/api/v1/test", (req,res)=>{
+console.log("working...")
+res.json({
+    message:"okay i am there."
+})
+})
 
 
 export { app }

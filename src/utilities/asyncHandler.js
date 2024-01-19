@@ -1,9 +1,12 @@
 const asyncHandler = (requestHandler) => async (req, res, next) => {
-    return (req, res, next)=>{
-        Promise.resolve((requestHandler(req, res, next))).reject((error)=>{
+    // console.log(req,"arroived inn handler")
+
+        console.log("returned required")
+        Promise.resolve((requestHandler(req, res, next))).catch((error)=>{
+            console.log(error)
             next(error)
         })
-    }
+    
 }
 
 export { asyncHandler }
