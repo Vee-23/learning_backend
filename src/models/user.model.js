@@ -1,3 +1,4 @@
+
 import mongoose, { Schema } from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
@@ -58,7 +59,7 @@ const UserSchema = new Schema({
     })
 
     UserSchema.methods.isPasswordCorrect = async function (password) {
-        bcrypt.compare(password, this.password)
+        return await bcrypt.compare(password, this.password)
     }
 
     UserSchema.methods.generateAccessToken = function(){
