@@ -11,14 +11,12 @@ import { registerUser,
   getUserChannelProfile,
   getWatchHistory } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { loginUser } from "../controllers/user.controller.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
-import { refreshAccessToken } from "../controllers/user.controller.js";
 
-const router = Router();
+const userRouter = Router();
 
 
-router.route("/register").post(upload.fields([
+userRouter.route("/register").post(upload.fields([
     {
     name: "avatar",
     maxCount: 1
@@ -29,19 +27,19 @@ router.route("/register").post(upload.fields([
     }
 ]) , registerUser)
 
-router.route("/login").post(loginUser)
-
-
+userRouter.route("/login").post(loginUser)
 
 //secured routes
-router.route("/logout").post(verifyJwt, logOutUser)
-router.route("/refresh_token").post(refreshAccessToken)
-router.route("/change-password").post(verifyJwt, changeCurrentPassword)
-router.route("/current-user").get(verifyJwt, getCurrentUser)
-router.route("update-account").patch(verifyJwt, updateAccountDetails)
-router.route("/avatar").patch(verifyJwt, upload.single("avatar"), updateUserAvatar)
-router.route("/cover-image").patch(verifyJwt, upload.single("coverImage"), updateUserCoverImage)
-router.route("/c/:username").get(verifyJwt, getUserChannelProfile)
-router.route("/history").get(verifyJwt, getWatchHistory)
+userRouter.route("/logout").post(verifyJwt, logOutUser)
+userRouter.route("/refresh_token").post(refreshAccessToken)
+userRouter.route("/change-password").post(verifyJwt, changeCurrentPassword)
+userRouter.route("/current-user").get(verifyJwt, getCurrentUser)
+userRouter.route("update-account").patch(verifyJwt, updateAccountDetails)
+userRouter.route("/avatar").patch(verifyJwt, upload.single("avatar"), updateUserAvatar)
+userRouter.route("/cover-image").patch(verifyJwt, upload.single("coverImage"), updateUserCoverImage)
+userRouter.route("/c/:username").get(verifyJwt, getUserChannelProfile)
+userRouter.route("/history").get(verifyJwt, getWatchHistory)
+
 
 export default userRouter
+
