@@ -32,7 +32,7 @@ const registerUser = asyncHandler(async (req, res) => {
     // create user object - create entry in db
     // remove password and refresh token field from response
     // return response 
-    console.log("checking if hitting..s")
+    // console.log("checking if hitting..s")
     const { fullName, email, username, password } = req.body
     // console.log("email: ", email)
 
@@ -79,7 +79,7 @@ const registerUser = asyncHandler(async (req, res) => {
     })
     // console.log("check",data)
     const createdUser = await User.findById(user._id).select("-password -refreshToken")
-    console.log(createdUser)
+    // console.log(createdUser)
     if (!createdUser) {
         throw new ApiError(500, "Something went wrong while proccessing")
     }

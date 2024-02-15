@@ -25,7 +25,7 @@ import likeRouter from "./routes/like.routes.js"
 import playlistRouter from "./routes/playlist.routes.js"
 import dashBoardRouter from "./routes/dashBoard.routes.js"
 
-// //routes declaration
+//routes declaration
 app.use("/api/v1/users", userRouter)
 app.use("/api/v1/comments", commentRouter)
 app.use("/api/v1/healthcheck", healthCheckRouter)
