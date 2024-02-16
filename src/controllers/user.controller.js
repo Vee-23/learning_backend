@@ -216,13 +216,14 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 })
 
 const changeCurrentPassword = asyncHandler(async(req, res)=>{
+    
     const {oldPassword, newPassword} = req.body
 
     const user = await User.findById(req.user?._id)
     const passwordValid = await user.isPasswordCorrect(oldPassword)
 
     if(!passwordValid){
-        throw new ApiError(400, "Invalid Password")
+        return new ApiError(400, "Invalid Password")
     }
 
     user.password = newPassword
@@ -240,10 +241,10 @@ const getCurrentUser = asyncHandler( async(req, res)=>{
 })
 
 const updateAccountDetails = asyncHandler(async(req, res)=>{
-    const {fullName, email} = req.body
+    const {fullName, username} = req.body
 
-    if(!fullName && !email){
-        throw new ApiError(400, "All fields are required")
+    if(!fullName && !username){
+        throw new ApiError(400, "All of the fields are required")
     }
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -251,7 +252,7 @@ const updateAccountDetails = asyncHandler(async(req, res)=>{
         {
             $set: {
                 fullName,
-                email
+                username
             }
         },
         {new: true}
@@ -259,7 +260,7 @@ const updateAccountDetails = asyncHandler(async(req, res)=>{
 
         return res
         .status(200)
-        .json(new ApiResponse(200, "Account has been successfully Updated"))
+        .json(new ApiResponse(200, updatedUser, "Account has been successfully Updated"))
 
 })
 
@@ -279,7 +280,7 @@ const updateUserAvatar = asyncHandler(async(req, res)=>{
     const user = await User.findByIdAndUpdate(req.user?._id,
         {
             $set: {
-                avatar
+                avatar: avatar.secure_url
             }
         },
             {new: true}
@@ -287,7 +288,7 @@ const updateUserAvatar = asyncHandler(async(req, res)=>{
 
         return res
         .status(200)
-        .json(new ApiResponse(200, "Avatar has been Updated"))
+        .json(new ApiResponse(200, avatar,"Avatar has been Updated"))
     
 
 })
@@ -308,7 +309,7 @@ const updateUserCoverImage = asyncHandler(async(req, res)=>{
     const user = await User.findByIdAndUpdate(req.user?._id,
         {
             $set: {
-                coverImage
+                coverImage: coverImage.secure_url
             }
         },
             {new: true}
