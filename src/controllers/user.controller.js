@@ -68,7 +68,7 @@ const registerUser = asyncHandler(async (req, res) => {
     if (!avatar) {
         throw new ApiError(400, "Avatar is required")
     }
-    console.log(avatar)
+    
     const user = await User.create({
         fullName,
         avatar: avatar.url,
@@ -77,9 +77,9 @@ const registerUser = asyncHandler(async (req, res) => {
         password,
         username: username.toLowerCase()
     })
-    // console.log("check",data)
+    
     const createdUser = await User.findById(user._id).select("-password -refreshToken")
-    // console.log(createdUser)
+    
     if (!createdUser) {
         throw new ApiError(500, "Something went wrong while proccessing")
     }
@@ -150,7 +150,8 @@ const logOutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $unset: { refreshTokenToken: 1 }
+            $unset: { refreshToken: 1,
+                      accessToken: 1}
         },
         {
             new: true
@@ -177,8 +178,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Unauthorized request");
     }
 
+    let decodedToken;
+
    try {
-     const decodedToken = Jwt.verify(incomingrefreshToken, process.env.REFRESH_TOKEN_SECRET)
+     decodedToken = Jwt.verify(incomingrefreshToken, process.env.REFRESH_TOKEN_SECRET)
    } catch (error) {
      throw new ApiError(401, error?.messge || "invalid Refresh token")
    }
@@ -206,7 +209,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             .cookie("refreshToken", refreshToken, options)
             .json(
                 new ApiResponse(200,
-                                {accessToken, refreshToken: newRefreshToken},
+                                {accessToken, refreshToken},
                                 "Access token Refreshed"   )
             )
 

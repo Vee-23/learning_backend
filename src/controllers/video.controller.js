@@ -16,52 +16,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
 const publishVideo = asyncHandler(async (req, res) => {
     // console.log("checking if hitting or not....1")
     const { title, description} = req.body
-
-    if([title, description].some((field)=>field?.trim() === "")){
-        throw new ApiError(409, "All Fields are required")
-    }
-
-    // console.log("checking if hitting or not....2")
-    const videoPath = req.files?.video[0]?.path;
-    if(!videoPath){
-        throw new ApiError(409, "No video has been recieved to Upload")
-    }
-
-    // console.log("checking if hitting or not....3")
-    const thumbnailPath = req.files?.thumbnail[0]?.path;
-    if(!thumbnailPath){
-        throw new ApiError(409, "Thumbnail is required")
-    }
-
-    // console.log("checking if hitting or not....4")
-    const videoFile = await uploadOnCloudinary(videoPath);
-    const thumbnailFile = await uploadOnCloudinary(thumbnailPath);
-
-    // console.log("checking if hitting or not....5")
-    if(!videoFile && !thumbnailFile){
-        throw new ApiError(409, "Video and Thumbnail are missing")
-    }
-    
-    console.log("checking if hitting or not....6")
-    const video = await Video.create(
-        {
-            videoFile : videoFile.url,
-            thumbnailFile: thumbnailFile.url,
-            title,
-            description
-        }
-    )
-    console.log(video)
-
-    const uploadedVideo = await Video.getVideoById(video._id)
-    if(!uploadedVideo){
-        throw new ApiError(501, "Something went wrong while uploading the video");
-    }
-
-    return res.status(200).json(
-        new ApiResponse(200, uploadedVideo, "Video has been Uploaded successfully")
-    )
-
 })
 
 const getVideoById = asyncHandler(async (req, res) => {
