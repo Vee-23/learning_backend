@@ -83,10 +83,10 @@ const updateTweet = asyncHandler(async (req, res) => {
     //TODO: update tweet
     
     const {tweetId, tweetString} = req.body
-
+    const validTweetId = isValidObjectId(tweetId)
     
-    if(!tweetId){
-        throw new ApiError(409, "No id Has been provided")
+    if(validTweetId === false){
+        throw new ApiError(409, "No valid id Has been provided")
     }
     if(!tweetString){
         throw new ApiError(409, "Updated Tweet cannot be empty")
@@ -119,9 +119,10 @@ const updateTweet = asyncHandler(async (req, res) => {
 const deleteTweet = asyncHandler(async (req, res) => {
     //TODO: delete tweet
     const {tweetId} = req.body
+    const validTweetId = isValidObjectId(tweetId)
 
-    if(!tweetId){
-        throw new ApiError(409, "No Tweet Id has been Provided")
+    if(!validTweetId){
+        throw new ApiError(409, "No Valid Tweet Id has been Provided")
     }
 
     const deletedTweet = await Tweet.findByIdAndDelete(tweetId)
