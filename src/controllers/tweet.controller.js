@@ -8,15 +8,13 @@ import {asyncHandler} from "../utilities/asyncHandler.js"
 const createTweet = asyncHandler(async (req, res) => {
     //TODO: create tweet
     const {username, tweetString} = req.body
-
     if(!tweetString){
-        return new ApiError(409, "The Tweet Is Empty")
+        throw new ApiError(409, "The Tweet Is Empty")
     }
 
     const user = await User.findOne({'username':username})
-
     if(!user){
-        return new ApiError(409, "UnAuthorized request")
+        throw new ApiError(409, "UnAuthorized request")
     }
 
     const tweet = await Tweet.create({
@@ -24,12 +22,12 @@ const createTweet = asyncHandler(async (req, res) => {
         owner: user._id
     })
 
-    const createdTweet = await Tweet.findById(tweet._id).select("-owner")
-
+    
     if(!tweet){
-        return new ApiError(501, "Something went wrong while uploading the tweet")
+        throw new ApiError(501, "Something went wrong while uploading the tweet")
     }
-
+    
+    const createdTweet = await Tweet.findById(tweet._id).select("-owner")
     return res.status(200).json(
         new ApiResponse(200, createdTweet,"Tweet has been uploaded succesfully")
     ) 
@@ -38,15 +36,99 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
     // TODO: get user tweets
+    const username = req.body.username;
+    if(!username){
+        throw new ApiError(409, "Username is required")
+    }
+
+    const user = await User.findOne({'username': username})
+    if(!user){
+        throw new ApiError(409, "No such User found")
+    }
+
+    const tweets = await User.aggregate([
+        {
+          $lookup: {
+            from: "tweets",
+            localField: "_id",
+            foreignField: "owner",
+            as: "Tweets",
+          },
+        },
+        {
+          $match: {
+            username : username
+          }
+        },
+        {
+          $project: {
+            username: 1,
+            fullName: 1,
+            Tweets: 1,
+            avatar: 1,
+          }
+        }
+      ])
+      if(!tweets){
+        throw new ApiError(500, "Something went wrong while Searching for tweets")
+      }
+
+      return res.status(200).json(
+        new ApiResponse(200, tweets, "Tweets have been succesfully collected")
+      )
     
 })
 
 const updateTweet = asyncHandler(async (req, res) => {
     //TODO: update tweet
+    
+    const {tweetId, tweetString} = req.body
+
+    
+    if(!tweetId){
+        throw new ApiError(409, "No id Has been provided")
+    }
+    if(!tweetString){
+        throw new ApiError(409, "Updated Tweet cannot be empty")
+    }
+
+    
+    const updatedTweet = await Tweet.findByIdAndUpdate(
+        tweetId,
+        {
+            $set:{
+                content: tweetString
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+    
+    if(!updatedTweet){
+        throw new ApiError(409, "Something went wrong while updating the tweet")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, updatedTweet, "Tweet has been Updated Succesfully")
+    )
+
 })
 
 const deleteTweet = asyncHandler(async (req, res) => {
     //TODO: delete tweet
+    const {tweetId} = req.body
+
+    if(!tweetId){
+        throw new ApiError(409, "No Tweet Id has been Provided")
+    }
+
+    const deletedTweet = await Tweet.findByIdAndDelete(tweetId)
+
+    return res.status(200).json(
+        new ApiResponse(200, deletedTweet, "The Tweet Has been succesfully deleted")
+    )
     
 })
 
