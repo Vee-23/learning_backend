@@ -34,7 +34,6 @@ const registerUser = asyncHandler(async (req, res) => {
     // return response 
     // console.log("checking if hitting..s")
     const { fullName, email, username, password } = req.body
-    // console.log("email: ", email)
 
     if (
         [fullName, email, username, password].some((field) => field?.trim() === "")
