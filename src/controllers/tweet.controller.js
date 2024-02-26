@@ -6,7 +6,6 @@ import {ApiResponse} from "../utilities/ApiResponse.js"
 import {asyncHandler} from "../utilities/asyncHandler.js"
 
 const createTweet = asyncHandler(async (req, res) => {
-    //TODO: create tweet
     const {username, tweetString} = req.body
     if(!tweetString){
         throw new ApiError(409, "The Tweet Is Empty")
@@ -35,7 +34,6 @@ const createTweet = asyncHandler(async (req, res) => {
 })
 
 const getUserTweets = asyncHandler(async (req, res) => {
-    // TODO: get user tweets
     const username = req.body.username;
     if(!username){
         throw new ApiError(409, "Username is required")
@@ -80,7 +78,6 @@ const getUserTweets = asyncHandler(async (req, res) => {
 })
 
 const updateTweet = asyncHandler(async (req, res) => {
-    //TODO: update tweet
     
     const {tweetId, tweetString} = req.body
     const validTweetId = isValidObjectId(tweetId)
@@ -117,7 +114,6 @@ const updateTweet = asyncHandler(async (req, res) => {
 })
 
 const deleteTweet = asyncHandler(async (req, res) => {
-    //TODO: delete tweet
     const {tweetId} = req.body
     const validTweetId = isValidObjectId(tweetId)
 
