@@ -6,7 +6,9 @@ import {ApiResponse} from "../utilities/ApiResponse.js"
 import {asyncHandler} from "../utilities/asyncHandler.js"
 
 const createTweet = asyncHandler(async (req, res) => {
-    const {username, tweetString} = req.body
+    const {tweetString} = req.body
+    const username = req.user.username
+
     if(!tweetString){
         throw new ApiError(409, "The Tweet Is Empty")
     }
