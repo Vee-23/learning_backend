@@ -4,7 +4,7 @@ import {
     createTweet,
     getUserTweets,
     updateTweet,
-    deleteTweet
+    deleteTweet,
 } from "../controllers/tweet.controller.js";
 
 const tweetRouter = Router();

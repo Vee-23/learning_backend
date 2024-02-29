@@ -46,7 +46,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
         )
 
     }else{
-        const unliked = await Like.deleteOne(tweetLikeState._id)
+        const unliked = await Like.deleteOne(user._id)
 
         const validation = await Like.findById(unliked._Id)
 
