@@ -1,6 +1,8 @@
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs'
 import dotenv from 'dotenv';
+import { ApiError } from './ApiError.js';
+import { response } from 'express';
 dotenv.config({path:'./.env'});
 
 cloudinary.config({
@@ -25,7 +27,23 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
-export { uploadOnCloudinary }
+const resource = async (public_id) =>{
+    try {
+        if(!public_id)return null;
+
+         const res = await cloudinary.api.resource(public_id, {
+            resource_type: "video",
+            media_metadata: true,
+          });
+
+          return res
+    } catch (error) {
+        throw new ApiError(501, "Something went wrong while trying to fetch data")
+    }
+}
+
+export { uploadOnCloudinary,
+         resource }
 
 
 // cloudinary.uploader.upload("https://upload.wikimedia.org/wikipedia/commons/a/ae/Olympic_flag.jpg",
