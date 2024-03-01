@@ -2,7 +2,6 @@ import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs'
 import dotenv from 'dotenv';
 import { ApiError } from './ApiError.js';
-import { response } from 'express';
 import { publicEncrypt } from 'crypto';
 dotenv.config({ path: './.env' });
 
@@ -43,27 +42,48 @@ const resource = async (public_id) => {
     }
 }
 
-const deleteMultiple = async (public_ids) => {
+const deleteMultipleImgs = async (ImgPublic_ids) => {
     try {
-        if(!public_ids) return null;
+        if (!ImgPublic_ids) return null;
 
-        const result = cloudinary.api.delete_resources(public_ids)
+        let result = []
+        for (let i = 0; i < ImgPublic_ids.length; i++) {
+            const element = ImgPublic_ids[i];
+            result = await cloudinary.uploader.destroy(element, {resource_type: 'image'})
+        }
 
         return result
     } catch (error) {
-        throw new ApiError(501, error, "Someting went wrong while deleting the files")
+        throw new ApiError(501, error, "Someting went wrong while deleting the Image files")
     }
 }
 
-const getPublicIdFromUrl = (arr) =>{
-    if(!arr)return "No url has been provided";
+const deleteMultipleVideos = async (VideosPublic_ids) => {
+    try {
+        if (!VideosPublic_ids) return null;
 
+        let result = []
+        for (let i = 0; i < VideosPublic_ids.length; i++) {
+            const element = VideosPublic_ids[i];
+            result = await cloudinary.uploader.destroy(element, {resource_type: 'video', type: 'authenticated'})
+        }
 
-    const public_ids = arr.forEach(ele => {
-    ele = ele.split("v1")[1]
-    ele = ele.split("/")[1]
-    ele.split(".")[0]
-    });
+        return result
+    } catch (error) {
+        throw new ApiError(501, error, "Someting went wrong while deleting the Video files")
+    }
+}
+
+const getPublicIdFromUrl = (arr) => {
+    if (!arr) return "No url has been provided";
+
+    let public_ids = [];
+    for (let i = 0; i < arr.length; i++) {
+        let ele = arr[i];
+        ele = ele.split("v1")[1]
+        ele = ele.split("/")[1]
+        public_ids[i] = ele.split(".")[0]
+    }
 
     return public_ids
 }
@@ -71,7 +91,8 @@ const getPublicIdFromUrl = (arr) =>{
 export {
     uploadOnCloudinary,
     resource,
-    deleteMultiple,
+    deleteMultipleImgs,
+    deleteMultipleVideos,
     getPublicIdFromUrl
 }
 

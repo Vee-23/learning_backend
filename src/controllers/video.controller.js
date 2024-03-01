@@ -4,7 +4,7 @@ import { User } from "../models/user.model.js"
 import { ApiError } from "../utilities/ApiError.js"
 import { ApiResponse } from "../utilities/ApiResponse.js"
 import { asyncHandler } from "../utilities/asyncHandler.js"
-import { uploadOnCloudinary, resource, deleteMultiple, getPublicIdFromUrl} from "../utilities/cloudinary.js"
+import { uploadOnCloudinary, resource, deleteMultipleImgs, deleteMultipleVideos, getPublicIdFromUrl } from "../utilities/cloudinary.js"
 import { application } from "express"
 
 
@@ -105,7 +105,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     }
     const ownerValidationString = `${oldVideo.owner}`
     const reqUserString = `${req.user._id}`
-    if(ownerValidationString !== reqUserString){
+    if (ownerValidationString !== reqUserString) {
         throw new ApiError(401, "Unauthorized request")
     }
 
@@ -125,11 +125,11 @@ const updateVideo = asyncHandler(async (req, res) => {
 
     const newVideo = await Video.findByIdAndUpdate(videoId,
         {
-            title: newtitle? newtitle : oldVideo.title,
-            description: newdescription? newdescription : oldVideo.description,
-            videoFile: newVideoObject.url? newVideoObject.url : oldVideo.videoFile,
-            thumbnail: newThumbnailObject.url? newThumbnailObject.url : oldVideo.thumbnail,
-            duration: newDurationObject.duration?newDurationObject.duration : oldVideo.duration
+            title: newtitle ? newtitle : oldVideo.title,
+            description: newdescription ? newdescription : oldVideo.description,
+            videoFile: newVideoObject.url ? newVideoObject.url : oldVideo.videoFile,
+            thumbnail: newThumbnailObject.url ? newThumbnailObject.url : oldVideo.thumbnail,
+            duration: newDurationObject.duration ? newDurationObject.duration : oldVideo.duration
         })
 
     const newVideoValidation = await Video.findById(newVideo._id)
@@ -137,10 +137,17 @@ const updateVideo = asyncHandler(async (req, res) => {
         throw new ApiError(501, "Something went wrong while updating the video")
     }
 
-    const assetUrls = [oldVideo.videoFile, oldVideo.thumbnail]
-    const public_ids = getPublicIdFromUrl(assetUrls)
-    console.log(public_ids)
-    // const deleteOldFiles = await deleteMultiple(public_ids)
+    if (thumbnailFile) {
+        const assetUrls = [oldVideo.thumbnail]
+        const public_ids = getPublicIdFromUrl(assetUrls)
+        const deleteOldImgs = await deleteMultipleImgs(public_ids)
+    }
+
+    if (videoFile) {
+        const assetUrls = [oldVideo.videoFile]
+        const public_ids = getPublicIdFromUrl(assetUrls)
+        const deleteOldVids = await deleteMultipleVideos(public_ids)
+    }
 
     return res.status(200).json(
         new ApiResponse(200, newVideo, "Video has been succesfully updated")
@@ -150,12 +157,96 @@ const updateVideo = asyncHandler(async (req, res) => {
 })
 
 const deleteVideo = asyncHandler(async (req, res) => {
-    const { videoId } = req.params
-    //TODO: delete video
+    const videoId = req.query.video
+    if (!videoId) {
+        throw new ApiError(401, "No Video Id has been given")
+    }
+
+    const validatingVideoId = isValidObjectId(videoId)
+    if (!validatingVideoId) {
+        throw new ApiError(401, "Not a valid Video Id")
+    }
+
+    const video = await Video.findById(videoId)
+    if (!video) {
+        throw new ApiError(501, "Something went wrong while verifying")
+    }
+
+    const ownerValidationString = `${video.owner}`
+    const reqUserString = `${req.user._id}`
+    if (ownerValidationString !== reqUserString) {
+        throw new ApiError(401, "Unauthorized request")
+    }
+
+    const deletedVideo = await Video.findByIdAndDelete(videoId)
+    if (!deletedVideo) {
+        throw new ApiError(502, "Something went wrong while deleting the video")
+    }
+
+    const ImgAssetUrl = [video.thumbnail]
+    const ImgPublic_id = getPublicIdFromUrl(ImgAssetUrl)
+    const deletedThumbnailFromCloud = await deleteMultipleImgs(ImgPublic_id)
+
+    const VidAssetUrl = [video.thumbnail]
+    const VidPublic_id = getPublicIdFromUrl(VidAssetUrl)
+    const deletedVideoFromCloud = await deleteMultipleImgs(VidPublic_id)
+
+    return res.status(200).json(
+        new ApiResponse(200, { deletedVideoFromCloud, deletedThumbnailFromCloud }, "Video deleted Successfully")
+    )
+
 })
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
-    const { videoId } = req.params
+    const videoId = req.query.video
+    if (!videoId) {
+        throw new ApiError(401, "No Video Id has been given")
+    }
+
+    const validatingVideoId = isValidObjectId(videoId)
+    if (!validatingVideoId) {
+        throw new ApiError(401, "Not a valid Video Id")
+    }
+
+    const video = await Video.findById(videoId)
+    if (!video) {
+        throw new ApiError(501, "Something went wrong while verifying")
+    }
+
+    const ownerValidationString = `${video.owner}`
+    const reqUserString = `${req.user._id}`
+    if (ownerValidationString !== reqUserString) {
+        throw new ApiError(401, "Unauthorized request")
+    }
+
+    if (!video.isPublished) {
+        const updatedVideo = await Video.findByIdAndUpdate(videoId,
+            {
+                isPublished: true
+            })
+        if (!updatedVideo) {
+            throw new ApiError(501, "Something went wrong with updating the video status")
+        }
+        const newVideoStatus = await Video.findById(updatedVideo._id)
+
+        return res.status(200).json(
+            new ApiResponse(200, newVideoStatus, "Video status updated successfully")
+        )
+    } else {
+        const updatedVideo = await Video.findByIdAndUpdate(videoId,
+            {
+                isPublished: false
+            })
+        if (!updatedVideo) {
+            throw new ApiError(501, "Something went wrong with updating the video status")
+        }
+        const newVideoStatus = await Video.findById(updatedVideo._id)
+
+        return res.status(200).json(
+            new ApiResponse(200, newVideoStatus, "Video status updated successfully")
+        )
+    }
+
 })
 
 export {
