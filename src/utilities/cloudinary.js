@@ -3,7 +3,8 @@ import fs from 'fs'
 import dotenv from 'dotenv';
 import { ApiError } from './ApiError.js';
 import { response } from 'express';
-dotenv.config({path:'./.env'});
+import { publicEncrypt } from 'crypto';
+dotenv.config({ path: './.env' });
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUDNAME,
@@ -27,23 +28,52 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
-const resource = async (public_id) =>{
+const resource = async (public_id) => {
     try {
-        if(!public_id)return null;
+        if (!public_id) return null;
 
-         const res = await cloudinary.api.resource(public_id, {
+        const res = await cloudinary.api.resource(public_id, {
             resource_type: "video",
             media_metadata: true,
-          });
+        });
 
-          return res
+        return res
     } catch (error) {
         throw new ApiError(501, "Something went wrong while trying to fetch data")
     }
 }
 
-export { uploadOnCloudinary,
-         resource }
+const deleteMultiple = async (public_ids) => {
+    try {
+        if(!public_ids) return null;
+
+        const result = cloudinary.api.delete_resources(public_ids)
+
+        return result
+    } catch (error) {
+        throw new ApiError(501, error, "Someting went wrong while deleting the files")
+    }
+}
+
+const getPublicIdFromUrl = (arr) =>{
+    if(!arr)return "No url has been provided";
+
+
+    const public_ids = arr.forEach(ele => {
+    ele = ele.split("v1")[1]
+    ele = ele.split("/")[1]
+    ele.split(".")[0]
+    });
+
+    return public_ids
+}
+
+export {
+    uploadOnCloudinary,
+    resource,
+    deleteMultiple,
+    getPublicIdFromUrl
+}
 
 
 // cloudinary.uploader.upload("https://upload.wikimedia.org/wikipedia/commons/a/ae/Olympic_flag.jpg",
