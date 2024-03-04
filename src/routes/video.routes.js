@@ -32,5 +32,6 @@ videoRouter.route("/updateVideo").patch(verifyJwt, upload.fields([
 ]),  updateVideo)
 videoRouter.route("/deleteVideo").delete(verifyJwt, deleteVideo)
 videoRouter.route("/toggle-publish-status").patch(verifyJwt, togglePublishStatus)
+videoRouter.route("/getAllVideos").get(verifyJwt, getAllVideos)
 
 export default videoRouter;

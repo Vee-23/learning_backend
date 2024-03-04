@@ -5,12 +5,109 @@ import { ApiError } from "../utilities/ApiError.js"
 import { ApiResponse } from "../utilities/ApiResponse.js"
 import { asyncHandler } from "../utilities/asyncHandler.js"
 import { uploadOnCloudinary, resource, deleteMultipleImgs, deleteMultipleVideos, getPublicIdFromUrl } from "../utilities/cloudinary.js"
-import { application } from "express"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    //TODO: get all videos based on query, sort, pagination
+    const { page = 1, limit = 2, sortBy, username } = req.query
+    const user = await User.findOne({"username": username})
+    if(!user){
+        throw new ApiError(401, "No User Id was found in the request")
+    }
+    const userId = user._id
+
+    const pipeline = [
+        {
+            $match:{
+                owner: userId
+            }
+        },
+        {
+            $lookup:{
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+            }
+        },
+        {
+            $addFields:{
+                owner: {
+                    $arrayElemAt: ["$owner", 0]
+                }
+            }
+        },
+        {
+            $addFields:{
+                Owner: {
+                    username: "$owner.username",
+                    fullName: "$owner.fullName",
+                    avatar: "$owner.avatar"
+                }
+            }
+        }
+    ]
+    if(sortBy === "views"){
+        pipeline.push(
+            {
+                $sort: {
+                    views: -1
+                }
+            }
+        )
+    }
+
+    if(sortBy === "latest"){
+        pipeline.push(
+            {
+                $sort: {
+                    createdAt: -1
+                }
+            }
+        )
+    }
+    else if(sortBy === "oldest"){
+        pipeline.push(
+            {
+                $sort: {
+                    createdAt: 1
+                }
+            }
+        )
+    }
+    else{
+        throw new ApiError(401, "No such Field exists")
+    }
+
+    pipeline.push(
+        {
+            $limit: (limit*page)
+        },
+        {
+            $project:{
+                videoFile: 1,
+                thumbnail: 1,
+                title: 1,
+                description: 1,
+                duration: 1,
+                views: 1,
+                isPublished: 1,
+                createdAt: 1,
+                Owner: 1
+            }
+        }
+    )
+
+    const videos = await Video.aggregate(pipeline)
+
+    if(!videos){
+        throw new ApiError(501, "Seemes as if The User has not uploaded any videos or something went wrong while fetching data")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, videos, "Videos have been successfully fetched")
+    )
+
+
 })
 
 const publishVideo = asyncHandler(async (req, res) => {
