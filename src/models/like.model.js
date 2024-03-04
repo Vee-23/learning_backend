@@ -2,6 +2,10 @@ import mongoose, {Schema} from "mongoose";
 
 const likeScehma = new Schema(
     {
+        typeOfContent: {
+            type: String,
+            required: true
+        },
         video: {
             type: Schema.Types.ObjectId,
             ref: "Video"

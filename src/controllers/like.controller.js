@@ -6,8 +6,65 @@ import {ApiResponse} from "../utilities/ApiResponse.js"
 import {asyncHandler} from "../utilities/asyncHandler.js"
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
-    const {videoId} = req.params
-    //TODO: toggle like on video
+    const videoId = req.query.videoId
+    const username = req.user.username
+    if(!videoId){
+        throw new ApiError(401, "No video Id has been provided")
+    }
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(401, "No valid video Id has been given")
+    }
+    const user = await User.findOne({'username':username})
+    if(!user){
+        throw new ApiError(402, "Something went wrong while checking for the user")
+    }
+
+    const LikeStateValidator = async(videoId, userId) => {
+        try {
+            const like = await Like.findOne(
+                {
+                    video: videoId,
+                    LikedBy: userId
+                }
+            )
+
+            return like
+        } catch (error) {
+            throw new ApiError(501, error, "Something went wrong while verification")
+        }
+    }
+
+    const videoLikeState = await LikeStateValidator(videoId, user._id)
+
+    if(!videoLikeState){
+        const liked = await Like.create(
+            {
+                video: videoId,
+                LikedBy: user._id,
+                typeOfContent: "video"
+            }
+        )
+        if(!liked){
+            throw new ApiError(501, "Something went wrong while liking the video")
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, liked, "Liked the video successfully")
+        )
+
+    }else{
+        const unliked = await Like.findByIdAndDelete(videoLikeState._id)
+        const unlikeValidation = await Like.findById(videoLikeState._id)
+        if(unlikeValidation){
+            throw new ApiError(501, "Something went wrong while unliking")
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, "Unliked the video successfully")
+        )
+    }
+
+
 })
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
@@ -23,20 +80,33 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     if(!tweetId){
         throw new ApiError(402, "tweet not found")
     }
+    if(!isValidObjectId(tweetId)){
+        throw new ApiError(401, "No valid tweet Id has been recieved")
+    }
 
-    const tweetLikeState = await Like.findOne({
-        tweet: tweetId,
-        LikedBy: user._id
-    })
+    const LikeStateValidator = async(tweetId, userId) =>{
+        try {
+            const like = await Like.findOne({
+                tweet: tweetId,
+                LikedBy: userId
+            })
+
+            return like
+        } catch (error) {
+            throw new ApiError(501, error,"Something went wrong while verification")
+        }
+    }
+    
+    const tweetLikeState = await LikeStateValidator(tweetId, user._id)
 
     if(!tweetLikeState){
         const liked = await Like.create(
             {
                 tweet: tweetId,
-                LikedBy: user._id
+                LikedBy: user._id,
+                typeOfContent: "tweet"
             }
         )
-
         if(!liked){
             throw new ApiError(501, "Something went wrong while Liking the comment")
         }
@@ -46,10 +116,8 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
         )
 
     }else{
-        const unliked = await Like.deleteOne(user._id)
-
-        const validation = await Like.findById(unliked._Id)
-
+        const unliked = await Like.findByIdAndDelete(tweetLikeState._id)
+        const validation = await Like.findById(tweetLikeState._Id)
         if(validation){
             throw new ApiError(501, "Something went wrong while unliking")
         }
@@ -64,7 +132,53 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 )
 
 const getLikedVideos = asyncHandler(async (req, res) => {
-    //TODO: get all liked videos
+    const username = req.user.username
+    const user = await User.findOne({'username': username})
+    if(!user){
+        throw new ApiError(501, "Something went wrong while retrieving user data")
+    }
+
+    const likedVideos = await Like.aggregate([
+        {
+            $match:{
+                LikedBy: user._id
+            }
+        },
+        {
+            $match: {
+                typeOfContent: "video"
+            }
+        },
+        {
+            $lookup:{
+                from: "videos",
+                foreignField: "_id",
+                localField: "video",
+                as: "video",
+            }
+        },
+        {
+            $addFields:{
+                video: {
+                        $arrayElemAt: ["$video", 0]
+                }
+            }
+        },
+        {
+            $sort:{
+                createdAt: 1
+            }
+        }
+    ])
+
+    if(!likedVideos){
+        throw new ApiError(501, "Something went wrong while fetching the data")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, likedVideos, "Liked videos successfully fetched")
+    )
+    
 })
 
 export {
