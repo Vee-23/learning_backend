@@ -14,6 +14,10 @@ const playlistSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "Video"
         }],
+        publicStatus:  {
+            type: Boolean,
+            required: true
+        },
         owner: {
             type: Schema.Types.ObjectId,
             ref: "User"
