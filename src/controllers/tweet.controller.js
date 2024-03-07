@@ -28,7 +28,7 @@ const createTweet = asyncHandler(async (req, res) => {
         throw new ApiError(501, "Something went wrong while uploading the tweet")
     }
 
-    const createdTweet = await Tweet.findById(tweet._id).select("-owner")
+    const createdTweet = await Tweet.findById(tweet._id)
     return res.status(200).json(
         new ApiResponse(200, createdTweet, "Tweet has been uploaded succesfully")
     )
@@ -78,7 +78,8 @@ const getUserTweets = asyncHandler(async (req, res) => {
                         $arrayElemAt: ["$Likes", 0]
                     }
                 }
-            }, {
+            }, 
+            {
                 $addFields: {
                     likes: "$Likes.totalLikes"
                 }

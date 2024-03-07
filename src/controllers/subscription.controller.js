@@ -58,32 +58,82 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         const subscribers = await Subscription.aggregate([
             {
                 $match:{
-                    channel: new mongoose.Types.ObjectId(ownerId),
+                    channel: new mongoose.Types.ObjectId(ownerId)
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    foreignField: "_id",
+                    localField: "subscriber",
+                    as: "subscriber_Details",
                     pipeline: [
                         {
-                            $count : "totalSubs"
+                            $project: {
+                                username: 1,
+                                avatar: 1
+                            }
                         }
                     ]
                 }
             },
-            // {
-            //     $lookup: {
-            //         from: "users",
-            //         foreignField: "_id",
-            //         localField: "subscriber",
-            //         as: "subscriber_Details"
-            //     }
-            // }
+            {
+                $addFields: {
+                    subscriber_Details : {
+                        $arrayElemAt: ["$subscriber_Details", 0]
+                    }
+                }
+            },
+            {
+                $project:{
+                    createdAt: 1,
+                    channel: 1,
+                    subscriber_Details: 1,
+                    totalSubs: 1
+                }
+            }
         ])
 
         return res.status(200).json(
-            new ApiResponse
+            new ApiResponse(200, subscribers, "Subscriber list fetched successfully")
         )
     } catch (error) {
         throw new ApiError(501, error, "something went wrong while fetching subscribers")
     }
 
 
+})
+
+//controller to return total subs of a channel
+const totalSubsOfAChannel = asyncHandler(async(req, res) =>{
+    const {ownerId} = req.query
+    if(!isValidObjectId(ownerId)){
+        throw new ApiError(401, "Invalid channel Id")
+    }
+
+    try {
+        const subscribers = await Subscription.aggregate([
+            {
+                $match:{
+                    channel: new mongoose.Types.ObjectId(ownerId)
+                }
+            },
+            {
+                $group: {
+                    _id : "$channel",
+                    totalSubs: {
+                        $sum: 1
+                    }
+                }
+            }
+        ])
+
+        return res.status(200).json(
+            new ApiResponse(200, subscribers, "Totalsubs fetched successfully")
+        )
+    } catch (error) {
+        throw new ApiError(501, error, "something went wrong while fetching subscribers")
+    }
 })
 
 // controller to return channel list to which user has subscribed
@@ -105,7 +155,22 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
                     from: "users",
                     foreignField: "_id",
                     localField: "channel",
-                    as: "channel_details"
+                    as: "channel_details",
+                    pipeline:[
+                        {
+                            $project:{
+                                username: 1,
+                                avatar: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields:{
+                    channel_details:{
+                        $arrayElemAt: ["$channel_details", 0]
+                    }
                 }
             }
         ])
@@ -122,5 +187,6 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
 export {
     toggleSubscription,
     getUserChannelSubscribers,
-    getSubscribedChannels
+    getSubscribedChannels,
+    totalSubsOfAChannel
 }
