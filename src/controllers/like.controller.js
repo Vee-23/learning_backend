@@ -1,6 +1,7 @@
 import mongoose, {isValidObjectId} from "mongoose"
 import { User } from "../models/user.model.js"
 import {Like} from "../models/like.model.js"
+import { Comment } from "../models/comment.model.js"
 import {ApiError} from "../utilities/ApiError.js"
 import {ApiResponse} from "../utilities/ApiResponse.js"
 import {asyncHandler} from "../utilities/asyncHandler.js"
@@ -68,8 +69,60 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 })
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
-    const {commentId} = req.params
- 
+    const {commentId} = req.query
+    const username = req.user.username
+    const user = await User.findOne({'username':username})
+    if(!commentId){
+        throw new ApiError(402, "tweet not found")
+    }
+    if(!isValidObjectId(commentId)){
+        throw new ApiError(401, "No valid tweet Id has been recieved")
+    }
+
+    //function to validate the state of like
+    const LikeStateValidator = async(commentId, userId) =>{
+        try {
+            const like = await Comment.findOne({
+                comment: commentId,
+                LikedBy: userId
+            })
+
+            return like
+        } catch (error) {
+            throw new ApiError(501, error,"Something went wrong while verification")
+        }
+    }
+    
+    const commentLikeState = await LikeStateValidator(commentId, user._id)
+
+    if(!commentLikeState){
+        const liked = await Like.create(
+            {
+                comment: commentId,
+                LikedBy: user._id,
+                typeOfContent: "comment"
+            }
+        )
+        if(!liked){
+            throw new ApiError(501, "Something went wrong while Liking the comment")
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, liked, "Liked the tweet successfully")
+        )
+
+    }else{
+        const unliked = await Like.findByIdAndDelete(commentLikeState._id)
+        const validation = await Like.findById(commentLikeState._Id)
+        if(validation){
+            throw new ApiError(501, "Something went wrong while unliking")
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, "unliked the tweet successfully")
+        )
+
+    }
 })
 
 const toggleTweetLike = asyncHandler(async (req, res) => {

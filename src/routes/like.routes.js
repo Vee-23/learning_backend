@@ -7,9 +7,10 @@ import { verifyJwt } from "../middlewares/auth.middleware.js";
 
 const likeRouter = Router();
 
-likeRouter.route("/tweet").post(verifyJwt, toggleTweetLike)
-likeRouter.route("/video").post(verifyJwt, toggleVideoLike)
-likeRouter.route("/all-liked-videos").get(verifyJwt, getLikedVideos)
+likeRouter.route("/tweet").post(verifyJwt, toggleTweetLike);
+likeRouter.route("/video").post(verifyJwt, toggleVideoLike);
+likeRouter.route("/all-liked-videos").get(verifyJwt, getLikedVideos);
+likeRouter.route("/comment").post(verifyJwt, toggleCommentLike);
 
 
 export default likeRouter;
